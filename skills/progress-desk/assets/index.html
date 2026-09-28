@@ -1,0 +1,694 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Progress Desk</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  color-scheme:light;
+  --bg:#f5f6f8; --surface:#fff; --ink:#18202c; --muted:#5a6475; --line:#dde1e8;
+  --accent:#2f4fb8; --accent-soft:#e6ebfa; --on-accent:#fff;
+  --done:#1f7a4d; --done-bg:#e3f3ea; --part:#a0620a; --part-bg:#fbefd9; --miss:#b3372f; --miss-bg:#f9e4e2;
+  --code-bg:#eef0f4;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    color-scheme:dark;
+    --bg:#11151c; --surface:#181e27; --ink:#e4e8ef; --muted:#9aa4b5; --line:#2a3240;
+    --accent:#8ea6f5; --accent-soft:#1f2946; --on-accent:#10162a;
+    --done:#6fd39e; --done-bg:#16301f; --part:#f0b45c; --part-bg:#33260f; --miss:#f08a80; --miss-bg:#3a1b19;
+    --code-bg:#222a36;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 "IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;padding-inline:16px;padding-block:0 64px}
+h1,h2,h3{font-family:"IBM Plex Sans Condensed","IBM Plex Sans",system-ui,sans-serif;font-weight:600;margin:0;line-height:1.2;text-wrap:balance}
+h1{font-size:20px} h2{font-size:19px} h3{font-size:15px}
+p{margin:0}
+code{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:.86em;background:var(--code-bg);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+.eyebrow{font:500 11px/1 "IBM Plex Mono",ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.top{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);margin-inline:-16px;padding:12px 16px;display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center}
+.top .meta{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:13px;color:var(--muted)}
+.top .meta b{color:var(--ink);font-weight:500}
+.conn{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--miss)}
+.conn.on .dot{background:var(--done)}
+
+.wrap{max-width:1120px;margin:0 auto;display:grid;gap:28px;padding-top:24px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px}
+.sec{display:grid;gap:12px}
+.row{display:grid;gap:20px;grid-template-columns:minmax(0,3fr) minmax(0,2fr)}
+@media (max-width:860px){.row{grid-template-columns:1fr}}
+
+.agent{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center}
+.pill{font:500 11px/1 "IBM Plex Mono",ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;padding:6px 8px;border-radius:4px;white-space:nowrap}
+.pill.working{color:var(--done);background:var(--done-bg)}
+.pill.waiting,.pill.blocked{color:var(--part);background:var(--part-bg)}
+.pill.idle{color:var(--muted);background:var(--code-bg)}
+.pill.done{color:var(--done);background:var(--done-bg)}
+.pill.part,.pill.doing{color:var(--part);background:var(--part-bg)}
+.pill.miss,.pill.todo{color:var(--muted);background:var(--code-bg)}
+.pill.question,.pill.declined{color:var(--miss);background:var(--miss-bg)}
+.pill.accepted,.pill.answered{color:var(--accent);background:var(--accent-soft)}
+.pill.sent{color:var(--muted);background:var(--code-bg)}
+.stats{display:flex;gap:18px;font-size:13px;color:var(--muted)}
+.stats b{display:block;font:600 22px/1 "IBM Plex Sans Condensed",system-ui,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums}
+.bar{display:flex;height:8px;border-radius:4px;overflow:hidden;background:var(--line)}
+
+/* waiting on you */
+.onyou{border-color:var(--part);border-width:1px 1px 1px 4px;display:grid;gap:14px}
+.onyou.clear{border-color:var(--line)}
+.onyou-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.count{font:600 13px/1 "IBM Plex Mono",ui-monospace,monospace;color:var(--part);background:var(--part-bg);padding:5px 8px;border-radius:4px}
+.onyou.clear .count{color:var(--done);background:var(--done-bg)}
+.ask{display:grid;gap:8px;padding-top:14px;border-top:1px solid var(--line)}
+.ask-head{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ask .rec{font-size:14px}
+.ask .rec b{font-weight:600}
+.blocks{font-size:12px;color:var(--muted)}
+.answer{display:flex;flex-wrap:wrap;gap:8px}
+.answer input{flex:1 1 240px;min-width:0;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg)}
+.btn{border:1px solid var(--line);background:var(--surface);padding:7px 12px;border-radius:6px;font-size:14px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* log + inbox */
+.feed{list-style:none;margin:0;padding:0;display:grid;gap:0;max-height:420px;overflow:auto}
+.feed li{display:grid;grid-template-columns:92px 1fr;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+.feed li:last-child{border-bottom:0}
+.feed time{font:12px/1.6 "IBM Plex Mono",ui-monospace,monospace;color:var(--muted);font-variant-numeric:tabular-nums}
+form.suggest{display:grid;gap:8px}
+form.suggest textarea{width:100%;min-height:84px;resize:vertical;padding:10px;border:1px solid var(--line);border-radius:6px;background:var(--bg)}
+form.suggest .line{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+form.suggest select{padding:7px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg)}
+.msgs{display:grid;gap:10px;max-height:460px;overflow:auto}
+.msg{border:1px solid var(--line);border-radius:6px;padding:10px 12px;display:grid;gap:6px;font-size:14px}
+.msg .h{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:12px;color:var(--muted)}
+.msg .reply{border-left:2px solid var(--accent);padding-left:10px}
+.msg .reply .who{font-size:12px;color:var(--accent);font-weight:500}
+.msg form{display:flex;gap:6px}
+.msg form input{flex:1;min-width:0;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg)}
+
+/* phases */
+.phases{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
+.phase{display:grid;gap:10px;align-content:start}
+.phase-h{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center}
+.num{font:600 12px/1 "IBM Plex Mono",ui-monospace,monospace;color:var(--accent);background:var(--accent-soft);border-radius:4px;padding:6px 7px}
+.pc{font:500 12px/1 "IBM Plex Mono",ui-monospace,monospace;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase small{color:var(--muted);font-size:13px}
+.tasks{list-style:none;margin:0;padding:0;display:grid;gap:5px;font-size:14px}
+.tasks li{display:grid;grid-template-columns:14px 1fr;gap:8px}
+.tasks li::before{content:"";width:10px;height:10px;margin-top:6px;border-radius:2px;border:1.5px solid var(--muted)}
+.tasks li.doing::before{border-color:var(--part);background:var(--part-bg)}
+.tasks li.done::before{border-color:var(--done);background:var(--done)}
+.tasks li.done span{color:var(--muted)}
+.blocked{font-size:12px;color:var(--part)}
+
+/* components */
+.tbl{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;min-width:680px;font-size:14px}
+th,td{text-align:left;vertical-align:top;padding:9px 12px;border-bottom:1px solid var(--line)}
+th{font:500 11px/1.3 "IBM Plex Mono",ui-monospace,monospace;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);background:var(--bg)}
+tr:last-child td{border-bottom:0}
+td.path{white-space:nowrap}
+.empty{color:var(--muted);font-size:14px}
+.flowtabs{display:flex;flex-wrap:wrap;gap:8px}
+.flowtabs button{border:1px solid var(--line);background:var(--surface);padding:6px 12px;border-radius:999px;font-size:13px}
+.flowtabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.diagram{display:grid;gap:10px}
+.diagram .note{font-size:13px;color:var(--muted);max-width:80ch}
+.diagram .canvas{overflow-x:auto}
+.diagram .canvas svg{max-width:100%;height:auto;min-width:560px}
+.diagram pre{white-space:pre-wrap;color:var(--miss);font-size:12px}
+.rv{display:grid;grid-template-columns:300px minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:860px){.rv{grid-template-columns:1fr}}
+.rv-nav{position:sticky;top:72px;display:grid;gap:12px;max-height:calc(100vh - 90px);overflow:auto}
+@media (max-width:860px){.rv-nav{position:static;max-height:none}}
+.rv-list{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.rv-list button{width:100%;text-align:left;border:0;background:transparent;padding:8px 10px;border-radius:6px;display:grid;grid-template-columns:18px 1fr;gap:8px;align-items:start;font-size:13px;line-height:1.4}
+.rv-list button:hover{background:var(--code-bg)}
+.rv-list button[aria-current="true"]{background:var(--accent-soft)}
+.rv-list .tick{width:14px;height:14px;margin-top:2px;border-radius:50%;border:1.5px solid var(--muted)}
+.rv-list .tick.on{background:var(--done);border-color:var(--done)}
+.rv-list small{display:block;color:var(--muted);font:12px/1.4 "IBM Plex Mono",ui-monospace,monospace}
+.rv-group{font:500 11px/1 "IBM Plex Mono",ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:6px 10px 2px}
+.rv-main{display:grid;gap:16px;min-width:0}
+.rv-head{display:grid;gap:6px}
+.rv-head .meta{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--muted)}
+.rv-points{margin:0;padding-left:18px;display:grid;gap:4px}
+.rv-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.rv-actions label{display:flex;gap:8px;align-items:center;font-size:14px;cursor:pointer}
+.rv-actions input{accent-color:var(--done);width:16px;height:16px}
+.step{display:grid;gap:8px}
+.step-h{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:baseline}
+.code{border:1px solid var(--line);border-radius:6px;overflow:auto;max-height:560px;background:var(--surface)}
+.code pre{margin:0;padding:10px 0;font:12.5px/1.55 "IBM Plex Mono",ui-monospace,Menlo,monospace;display:grid;grid-template-columns:auto 1fr;min-width:max-content}
+.code .ln{color:var(--muted);text-align:right;padding:0 12px 0 14px;user-select:none;border-right:1px solid var(--line)}
+.code .src{padding:0 14px}
+.code .src code, .code .src .hljs{background:transparent;padding:0;font:inherit}
+.file{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.file > summary{list-style:none;cursor:pointer;padding:9px 12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px;background:var(--bg)}
+.file > summary::-webkit-details-marker{display:none}
+.file .st{font:600 11px/1 "IBM Plex Mono",ui-monospace,monospace;padding:4px 6px;border-radius:4px}
+.st.A{color:var(--done);background:var(--done-bg)} .st.D{color:var(--miss);background:var(--miss-bg)} .st.M,.st.R{color:var(--part);background:var(--part-bg)}
+.file .nums{margin-left:auto;font:12px "IBM Plex Mono",ui-monospace,monospace}
+.nums .a{color:var(--done)} .nums .d{color:var(--miss)}
+.diff{margin:0;font:12.5px/1.5 "IBM Plex Mono",ui-monospace,Menlo,monospace;overflow:auto;max-height:620px;border-top:1px solid var(--line)}
+.diff span{display:block;padding:0 12px;white-space:pre;min-width:max-content}
+.diff .add{background:var(--done-bg)} .diff .del{background:var(--miss-bg)}
+.diff .hunk{color:var(--accent);background:var(--accent-soft)}
+.cmts{display:grid;gap:8px}
+.cmts form{display:flex;gap:8px;flex-wrap:wrap}
+.cmts textarea{flex:1 1 280px;min-height:60px;resize:vertical;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg)}
+.toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:6px;font-size:14px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+</head>
+<body>
+
+<div class="top">
+  <h1 id="title">Progress Desk</h1>
+  <div class="meta">
+    <span>Branch <b class="mono" id="branch">…</b></span>
+    <span>Base <b class="mono" id="base">…</b></span>
+    <span>Updated <b id="updated">…</b></span>
+  </div>
+  <div class="conn" id="conn"><span class="dot"></span><span id="conn-text">Connecting…</span></div>
+</div>
+
+<div class="wrap">
+
+  <section class="card agent" aria-label="Agent status">
+    <span class="pill idle" id="agent-pill">…</span>
+    <p id="agent-now" class="muted">Waiting for the first update from the server.</p>
+    <div class="stats">
+      <div><b id="s-pct">–</b>built</div>
+      <div><b id="s-done">–</b>done</div>
+      <div><b id="s-part">–</b>partial</div>
+      <div><b id="s-miss">–</b>not started</div>
+    </div>
+  </section>
+
+  <section class="card onyou" id="onyou" aria-labelledby="onyou-title">
+    <div class="onyou-head">
+      <h2 id="onyou-title">Waiting on you</h2>
+      <span class="count" id="onyou-count">–</span>
+      <span class="muted" style="font-size:13px">Anything here is holding up the agent.</span>
+    </div>
+    <div id="onyou-list"></div>
+  </section>
+
+  <div class="row">
+    <section class="sec" aria-labelledby="log-title">
+      <div><div class="eyebrow">From the agent</div><h2 id="log-title">Activity</h2></div>
+      <div class="card"><ul class="feed" id="log"></ul></div>
+    </section>
+
+    <section class="sec" aria-labelledby="inbox-title">
+      <div><div class="eyebrow">To the agent</div><h2 id="inbox-title">Suggestions</h2></div>
+      <div class="card" style="display:grid;gap:14px">
+        <form class="suggest" id="suggest-form">
+          <label for="s-text" class="muted" style="font-size:13px">Anything to change, add or check. The agent picks these up while it works.</label>
+          <textarea id="s-text" placeholder="e.g. Add a test for the empty-input case"></textarea>
+          <div class="line">
+            <label for="s-ref" class="muted" style="font-size:13px">About</label>
+            <select id="s-ref"><option value="">General</option></select>
+            <button class="btn primary" id="s-send" type="submit" style="margin-left:auto">Send to agent</button>
+          </div>
+        </form>
+        <div class="msgs" id="msgs"></div>
+      </div>
+    </section>
+  </div>
+
+  <section class="sec" aria-labelledby="flow-title">
+    <div><div class="eyebrow">How it works</div><h2 id="flow-title">Flow</h2></div>
+    <div class="flowtabs" role="tablist" id="flowtabs"></div>
+    <div class="card diagram" id="diagram" role="tabpanel"></div>
+  </section>
+
+  <section class="sec" aria-labelledby="phases-title">
+    <div><div class="eyebrow">Build plan</div><h2 id="phases-title">Phases</h2></div>
+    <div class="phases" id="phases"></div>
+  </section>
+
+  <section class="sec" aria-labelledby="comp-title">
+    <div><div class="eyebrow">Design vs. code</div><h2 id="comp-title">Components</h2></div>
+    <div class="tbl"><table>
+      <thead><tr><th>Design file</th><th>Status</th><th>What exists</th><th>What's missing</th><th>Phase</th></tr></thead>
+      <tbody id="comps"></tbody>
+    </table></div>
+  </section>
+
+  <section class="sec" id="review-view" aria-labelledby="rv-title">
+  <div class="rv-head">
+    <div class="eyebrow" id="rv-eyebrow">Code review</div>
+    <h2 id="rv-title">Code review</h2>
+    <div class="flowtabs" role="tablist" id="rv-modes">
+      <button type="button" role="tab" id="rv-mode-flows" aria-selected="true">Walkthroughs</button>
+      <button type="button" role="tab" id="rv-mode-commits" aria-selected="false">History</button>
+    </div>
+    <p class="muted" id="rv-intro" style="font-size:14px;max-width:80ch"></p>
+  </div>
+  <div class="rv">
+    <nav class="rv-nav card" id="rv-nav" aria-label="Review items"></nav>
+    <div class="rv-main" id="rv-main"><p class="muted">Loading review data…</p></div>
+  </div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  var S = null, INBOX = [], ws = null, retry = 0;
+  var LABEL = {done:'Done', part:'Partial', miss:'Not started', todo:'To do', doing:'In progress',
+               working:'Working', waiting:'Waiting', blocked:'Blocked', idle:'Idle',
+               accepted:'Accepted', declined:'Declined', question:'Needs your answer', answered:'Answered', sent:'Sent'};
+
+  function $(id){return document.getElementById(id)}
+  function el(tag, cls, kids){
+    var e = document.createElement(tag); if(cls) e.className = cls;
+    (kids||[]).forEach(function(k){ e.append(k) }); return e;
+  }
+  // Plain text with `backticks` rendered as code. Never uses innerHTML.
+  function rich(text){
+    var f = document.createDocumentFragment();
+    String(text||'').split('`').forEach(function(part,i){
+      if(i%2){ var c=document.createElement('code'); c.textContent=part; f.append(c) }
+      else if(part) f.append(document.createTextNode(part));
+    });
+    return f;
+  }
+  function pill(status, text){ var p=el('span','pill '+status); p.textContent=text||LABEL[status]||status; return p }
+  function when(iso){
+    var d=new Date(iso); if(isNaN(d)) return '';
+    var same = d.toDateString()===new Date().toDateString();
+    return same ? d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})
+                : d.toLocaleDateString([], {day:'numeric',month:'short'})+' '+d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  }
+  function toast(msg){
+    var t=el('div','toast'); t.textContent=msg; t.setAttribute('role','status');
+    document.body.append(t); setTimeout(function(){t.remove()}, 2600);
+  }
+  function send(kind, ref, text){
+    if(!ws || ws.readyState!==1){ toast('Not connected. Your text is kept, try again in a moment.'); return false }
+    ws.send(JSON.stringify({kind:kind, ref:ref||'', text:text}));
+    toast('Sent to the agent'); return true;
+  }
+
+  // Keep typed text and focus across live re-renders.
+  function keep(fn){
+    var vals={}, act=document.activeElement && document.activeElement.id;
+    document.querySelectorAll('[data-keep]').forEach(function(i){ vals[i.id]=i.value });
+    fn();
+    Object.keys(vals).forEach(function(id){ var i=$(id); if(i) i.value=vals[id] });
+    if(act && $(act)) $(act).focus();
+  }
+
+  function sentFor(ref){ return INBOX.filter(function(m){return m.kind==='decision' && m.ref===ref}).pop() }
+
+  function renderTop(){
+    $('title').textContent=S.title||'Progress Desk'; $('branch').textContent=S.branch||''; $('base').textContent=S.base||'';
+    $('updated').textContent=when(S.updated_at);
+    var a=S.agent||{}; var p=$('agent-pill'); p.className='pill '+(a.status||'idle'); p.textContent=LABEL[a.status]||a.status||'';
+    var now=$('agent-now'); now.className=''; now.replaceChildren(rich(a.now));
+    var s=S.summary||{};
+    $('s-pct').textContent=(s.percent!=null?s.percent+'%':'–');
+    $('s-done').textContent=s.done; $('s-part').textContent=s.part; $('s-miss').textContent=s.miss;
+  }
+
+  function renderOnYou(){
+    var list=$('onyou-list'); list.replaceChildren();
+    var waitingDec=(S.decisions||[]).filter(function(d){return d.status==='waiting'});
+    var questions=INBOX.filter(function(m){ var r=(S.replies||{})[m.id]; return r && r.status==='question' && !INBOX.some(function(x){return x.kind==='reply'&&x.ref===m.id&&x.at>r.at}) });
+    var blockers=S.blockers||[];
+    var n=waitingDec.length+questions.length+blockers.length;
+    $('onyou-count').textContent = n ? n+' open' : 'Nothing';
+    $('onyou').classList.toggle('clear', !n);
+    if(!n){ list.append(el('p','empty',[document.createTextNode('Nothing is waiting on you right now.')])); return }
+
+    blockers.forEach(function(b){
+      list.append(el('div','ask',[el('div','ask-head',[pill('blocked'), el('h3','',[rich(b.text)])])]));
+    });
+
+    questions.forEach(function(m){
+      var r=S.replies[m.id], id='q-'+m.id;
+      var inp=el('input'); inp.id=id; inp.setAttribute('data-keep',''); inp.placeholder='Your answer'; inp.setAttribute('aria-label','Answer the agent');
+      var b=el('button','btn primary'); b.type='submit'; b.textContent='Reply';
+      var f=el('form','answer',[inp,b]);
+      f.addEventListener('submit',function(e){ e.preventDefault(); if(inp.value.trim() && send('reply', m.id, inp.value.trim())) inp.value='' });
+      list.append(el('div','ask',[
+        el('div','ask-head',[pill('question'), el('span','muted',[document.createTextNode('On your suggestion: “'+m.text.slice(0,80)+(m.text.length>80?'…':'')+'”')])]),
+        el('p','',[rich(r.note)]), f ]));
+    });
+
+    waitingDec.forEach(function(d){
+      var id='d-'+d.id, pending=sentFor(d.id);
+      var inp=el('input'); inp.id=id; inp.setAttribute('data-keep',''); inp.placeholder='Or write your own answer'; inp.setAttribute('aria-label','Answer '+d.id);
+      var useRec=el('button','btn primary'); useRec.type='button'; useRec.textContent='Go with recommendation';
+      useRec.addEventListener('click',function(){ send('decision', d.id, 'Go with the recommendation: '+d.rec) });
+      var own=el('button','btn'); own.type='submit'; own.textContent='Send answer';
+      var f=el('form','answer',[inp,own,useRec]);
+      f.addEventListener('submit',function(e){ e.preventDefault(); if(inp.value.trim() && send('decision', d.id, inp.value.trim())) inp.value='' });
+      var head=el('div','ask-head',[el('span','num',[document.createTextNode(d.id)]), el('h3','',[rich(d.title)])]);
+      if(pending) head.append(pill('sent','Answer sent '+when(pending.at)+', agent to confirm'));
+      var blocks=el('div','blocks'); blocks.textContent='Blocks '+(d.blocks||[]).join(', ');
+      var rec=el('p','rec'); var rb=el('b'); rb.textContent='Recommended: '; rec.append(rb, rich(d.rec));
+      list.append(el('div','ask',[head, el('p','muted',[rich(d.context)]), rec, blocks, f]));
+    });
+  }
+
+  function renderLog(){
+    var ul=$('log'); ul.replaceChildren();
+    (S.log||[]).slice().sort(function(a,b){return a.at<b.at?1:-1}).forEach(function(l){
+      var t=el('time'); t.dateTime=l.at; t.textContent=when(l.at);
+      ul.append(el('li','',[t, el('span','',[rich(l.text)])]));
+    });
+  }
+
+  function renderRefs(){
+    var sel=$('s-ref'), cur=sel.value; sel.replaceChildren();
+    var o=el('option'); o.value=''; o.textContent='General'; sel.append(o);
+    (S.phases||[]).forEach(function(p){ var o=el('option'); o.value=p.id; o.textContent=p.id+' · '+p.title; sel.append(o) });
+    (S.decisions||[]).forEach(function(d){ var o=el('option'); o.value=d.id; o.textContent=d.id+' · '+d.title.replace(/`/g,''); sel.append(o) });
+    sel.value=cur;
+  }
+
+  function renderMsgs(){
+    var box=$('msgs'); box.replaceChildren();
+    var mine=INBOX.filter(function(m){return m.kind!=='reply'}).slice().reverse();
+    if(!mine.length){ box.append(el('p','empty',[document.createTextNode('No suggestions yet.')])); return }
+    mine.forEach(function(m){
+      var r=(S.replies||{})[m.id];
+      var h=el('div','h'); var t=el('time'); t.dateTime=m.at; t.textContent=when(m.at); h.append(t);
+      if(m.ref){ h.append(el('span','num',[document.createTextNode(m.ref)])) }
+      if(m.kind==='decision') h.append(document.createTextNode('decision answer'));
+      h.append(r ? pill(r.status) : pill('sent','Not picked up yet'));
+      var card=el('div','msg',[h, el('p','',[rich(m.text)])]);
+      if(r && r.note){
+        var who=el('div','who'); who.textContent='Agent';
+        card.append(el('div','reply',[who, el('p','',[rich(r.note)])]));
+      }
+      INBOX.filter(function(x){return x.kind==='reply'&&x.ref===m.id}).forEach(function(x){
+        var who=el('div','who'); who.textContent='You · '+when(x.at); who.style.color='var(--muted)';
+        card.append(el('div','reply',[who, el('p','',[rich(x.text)])]));
+      });
+      box.append(card);
+    });
+  }
+
+  function renderPhases(){
+    var box=$('phases'); box.replaceChildren();
+    var open={}; (S.decisions||[]).forEach(function(d){ if(d.status==='waiting') open[d.id]=1 });
+    (S.phases||[]).forEach(function(p){
+      var done=p.tasks.filter(function(t){return t.status==='done'}).length;
+      var pc=el('span','pc'); pc.textContent=done+'/'+p.tasks.length;
+      var title=el('div','',[el('h3','',[rich(p.title)]), el('small','',[rich(p.why)])]);
+      var card=el('div','card phase',[el('div','phase-h',[el('span','num',[document.createTextNode(p.id)]), title, pc])]);
+      var waiting=(p.blocked_by||[]).filter(function(d){return open[d]});
+      if(waiting.length){ var b=el('div','blocked'); b.textContent='Waiting on '+waiting.join(', '); card.append(b) }
+      var ul=el('ul','tasks');
+      p.tasks.forEach(function(t){ var li=el('li',t.status,[el('span','',[rich(t.text)])]); li.title=LABEL[t.status]||''; ul.append(li) });
+      card.append(ul); box.append(card);
+    });
+  }
+
+  function renderComps(){
+    var tb=$('comps'); tb.replaceChildren();
+    (S.components||[]).forEach(function(c){
+      var path=el('td','path'); var code=el('code'); code.textContent=c.path; path.append(code);
+      var st=el('td'); st.append(pill(c.status));
+      var tr=el('tr','',[path, st, el('td','',[rich(c.has)]), el('td','',[rich(c.missing)]), el('td','mono',[document.createTextNode(c.phase)])]);
+      tb.append(tr);
+    });
+  }
+
+  // ---- Flow diagrams (Mermaid) ----
+  var flowTab = 'progress', drawn = '', seq = 0;
+  function css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim() }
+  function plain(t){ return String(t||'').replace(/`/g,'').replace(/"/g,"'") }
+
+  // Built from live state, so it redraws as tasks finish and decisions are answered.
+  function progressDiagram(){
+    var open={}, lines=['flowchart LR'];
+    (S.decisions||[]).forEach(function(d){ if(d.status==='waiting') open[d.id]=d });
+    (S.phases||[]).forEach(function(p){
+      var done=p.tasks.filter(function(t){return t.status==='done'}).length, n=p.tasks.length;
+      var st = done===n ? 'done' : (done || p.tasks.some(function(t){return t.status==='doing'})) ? 'doing'
+             : (p.blocked_by||[]).some(function(d){return open[d]}) ? 'blocked' : 'ready';
+      lines.push('  '+p.id+'["<b>'+p.id+'</b> '+plain(p.title)+'<br/>'+done+'/'+n+' tasks"]:::'+st);
+      (p.after||[]).forEach(function(a){ lines.push('  '+a+' --> '+p.id) });
+    });
+    Object.keys(open).forEach(function(id){
+      var d=open[id];
+      lines.push('  '+id+'{{"'+id+' '+plain(d.title)+'<br/><i>waiting on you</i>"}}:::you');
+      (d.blocks||[]).forEach(function(b){ lines.push('  '+id+' -.-> '+b) });
+    });
+    lines.push('  classDef done fill:'+css('--done-bg')+',stroke:'+css('--done')+',color:'+css('--ink'));
+    lines.push('  classDef doing fill:'+css('--part-bg')+',stroke:'+css('--part')+',color:'+css('--ink'));
+    lines.push('  classDef ready fill:'+css('--surface')+',stroke:'+css('--accent')+',color:'+css('--ink'));
+    lines.push('  classDef blocked fill:'+css('--surface')+',stroke:'+css('--muted')+',color:'+css('--muted')+',stroke-dasharray:4 3');
+    lines.push('  classDef you fill:'+css('--miss-bg')+',stroke:'+css('--miss')+',color:'+css('--ink'));
+    return lines.join('\n');
+  }
+
+  function flows(){
+    return [{id:'progress', title:'Build progress', note:'Green is done, amber in progress, blue ready to start, dashed blocked. Red hexagons are decisions waiting on you; dotted arrows show what each one blocks.', code:progressDiagram()}]
+      .concat(S.diagrams||[]);
+  }
+
+  function renderFlow(){
+    var list=flows(), tabs=$('flowtabs');
+    if(!list.some(function(f){return f.id===flowTab})) flowTab=list[0].id;
+    tabs.replaceChildren();
+    list.forEach(function(f){
+      var b=el('button'); b.type='button'; b.id='tab-'+f.id; b.setAttribute('role','tab');
+      b.setAttribute('aria-selected', f.id===flowTab ? 'true':'false'); b.textContent=f.title;
+      b.addEventListener('click', function(){ flowTab=f.id; renderFlow() });
+      tabs.append(b);
+    });
+    var f=list.filter(function(x){return x.id===flowTab})[0];
+    if(drawn===f.id+'\n'+f.code) return;
+    drawn=f.id+'\n'+f.code;
+    var box=$('diagram'), canvas=el('div','canvas');
+    box.replaceChildren(el('p','note',[rich(f.note)]), canvas);
+    if(!window.mermaid){ canvas.append(el('pre','',[document.createTextNode('Mermaid did not load (offline?). Source:\n\n'+f.code)])); return }
+    var dark = matchMedia('(prefers-color-scheme: dark)').matches;
+    mermaid.initialize({startOnLoad:false, securityLevel:'strict', theme: dark?'dark':'default',
+      themeVariables:{fontFamily:'IBM Plex Sans, system-ui, sans-serif', fontSize:'14px'},
+      sequence:{mirrorActors:false, wrap:true, width:170}, flowchart:{curve:'basis'}});
+    mermaid.render('mmd'+(++seq), f.code).then(function(r){ canvas.innerHTML=r.svg })
+      .catch(function(e){ drawn=''; canvas.append(el('pre','',[document.createTextNode('Diagram error: '+(e && e.message || e))])) });
+  }
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(){ drawn=''; if(S) renderFlow() });
+
+  function render(){
+    if(!S) return;
+    keep(function(){ renderTop(); renderOnYou(); renderLog(); renderRefs(); renderMsgs(); renderFlow(); renderPhases(); renderComps() });
+    document.title = (S.agent && S.agent.status==='working' ? '● ' : '') + (S.title||'Progress Desk');
+  }
+
+
+  // ---- Code review tab ----
+  var R = null, rvVersion = null, rvLoading = false;
+  var rvMode = pref('rv:mode') || 'flows';
+  function pref(k, v){ try{ if(v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v) }catch(_){ return null } }
+  function isReviewed(id){ return pref('rv:done:'+id) === '1' }
+  function txt(t){ return document.createTextNode(t) }
+  function shortSubject(sub){ return sub.replace(/^[a-z]+\([A-Z]+-\d+\):\s*/, '') }
+
+  function rvItems(){
+    if(!R) return [];
+    if(rvMode === 'flows'){
+      var out = [];
+      R.flows.forEach(function(f){ f.steps.forEach(function(st, i){ out.push({id: st.id, flow: f, step: st, n: i+1}) }) });
+      return out;
+    }
+    return R.commits.map(function(c){ return {id: c.hash, commit: c} });
+  }
+  function rvSelected(items){
+    var id = pref('rv:sel:'+rvMode);
+    return items.filter(function(x){ return x.id === id })[0] || items[0];
+  }
+  function toReviewTop(){ var r = $('review-view'); if(r.getBoundingClientRect().top < 0) r.scrollIntoView({block: 'start'}) }
+
+  function loadReview(){
+    if(rvLoading) return; rvLoading = true;
+    fetch('/review.json', {cache: 'no-store'}).then(function(r){ return r.json() })
+      .then(function(d){ R = d; rvLoading = false; renderReview() })
+      .catch(function(){ rvLoading = false; $('rv-main').replaceChildren(el('p','empty',[txt('No review data yet. It appears after the agent generates review.json.')])) });
+  }
+
+  function renderReview(){
+    if(!R) return;
+    ['flows','commits'].forEach(function(m){ $('rv-mode-'+m).setAttribute('aria-selected', m === rvMode ? 'true' : 'false') });
+    var items = rvItems(), cur = rvSelected(items);
+    var done = items.filter(function(x){ return isReviewed(x.id) }).length;
+    $('rv-eyebrow').textContent = 'Code review · ' + R.branch + ' @ ' + R.head + ' · ' + done + ' of ' + items.length + ' reviewed';
+    $('rv-intro').replaceChildren(rich(rvMode === 'flows'
+      ? 'Follow one request through the code, one function at a time, in the order it runs.'
+      : 'How the work was built, commit by commit, oldest first. Each has what changed, why, and what to look at.'));
+    renderRvNav(items, cur);
+    renderRvMain(items, cur);
+  }
+
+  function renderRvNav(items, cur){
+    var nav = $('rv-nav'); nav.replaceChildren();
+    var list = el('ul','rv-list'), lastFlow = null;
+    items.forEach(function(x){
+      if(x.flow && x.flow !== lastFlow){ lastFlow = x.flow; list.append(el('li','rv-group',[txt(x.flow.title)])) }
+      var b = el('button'); b.type = 'button'; b.id = 'rvn-'+x.id;
+      if(x.id === cur.id) b.setAttribute('aria-current','true');
+      var tick = el('span','tick' + (isReviewed(x.id) ? ' on' : ''));
+      var label = x.step
+        ? el('span','',[txt(x.n + '. ' + x.step.func), el('small','',[txt(x.step.file)])])
+        : el('span','',[txt(shortSubject(x.commit.subject)), el('small','',[txt(x.commit.hash + ' · ' + x.commit.files.length + ' files')])]);
+      b.append(tick, label);
+      b.addEventListener('click', function(){ pref('rv:sel:'+rvMode, x.id); renderReview(); toReviewTop() });
+      list.append(el('li','',[b]));
+    });
+    nav.append(list);
+  }
+
+  function codeBlock(code, start, file){
+    var lines = code.split('\n'), nums = [];
+    for(var i = 0; i < lines.length; i++) nums.push(start + i);
+    var ln = el('span','ln'); ln.textContent = nums.join('\n');
+    var src = el('span','src'), c = el('code','hljs'), lang = file.split('.').pop();
+    // hljs escapes its input; the plain fallback uses textContent.
+    if(window.hljs && hljs.getLanguage(lang)){ c.innerHTML = hljs.highlight(code, {language: lang}).value } else { c.textContent = code }
+    src.append(c);
+    return el('div','code',[el('pre','',[ln, src])]);
+  }
+
+  function diffBlock(diff){
+    var pre = el('pre','diff');
+    diff.split('\n').forEach(function(l){
+      var cls = l.charAt(0) === '+' ? 'add' : l.charAt(0) === '-' ? 'del' : l.indexOf('@@') === 0 ? 'hunk' : '';
+      var sp = el('span', cls); sp.textContent = l || ' '; pre.append(sp);
+    });
+    return pre;
+  }
+
+  function reviewedToggle(id){
+    var cb = el('input'); cb.type = 'checkbox'; cb.id = 'rvdone-'+id; cb.checked = isReviewed(id);
+    cb.addEventListener('change', function(){ pref('rv:done:'+id, cb.checked ? '1' : '0'); renderReview() });
+    var lab = el('label','',[cb, txt('Reviewed')]); lab.htmlFor = cb.id;
+    return lab;
+  }
+
+  function navButtons(items, cur){
+    var i = items.indexOf(cur), wrap = el('div','rv-actions');
+    [['Previous', i-1], ['Next', i+1]].forEach(function(p){
+      var b = el('button','btn'); b.type = 'button'; b.textContent = p[0];
+      if(p[1] < 0 || p[1] >= items.length){ b.disabled = true }
+      else b.addEventListener('click', function(){ pref('rv:sel:'+rvMode, items[p[1]].id); renderReview(); toReviewTop() });
+      wrap.append(b);
+    });
+    return wrap;
+  }
+
+  function renderComments(id){
+    var box = $('rv-cmts'); if(!box) return;
+    var list = el('div','msgs');
+    INBOX.filter(function(m){ return m.ref === id && m.kind !== 'reply' }).forEach(function(m){
+      var r = (S && S.replies || {})[m.id];
+      var h = el('div','h'); var t = el('time'); t.dateTime = m.at; t.textContent = when(m.at); h.append(t, r ? pill(r.status) : pill('sent','Not picked up yet'));
+      var card = el('div','msg',[h, el('p','',[rich(m.text)])]);
+      if(r && r.note) card.append(el('div','reply',[el('div','who',[txt('Agent')]), el('p','',[rich(r.note)])]));
+      list.append(card);
+    });
+    var ta = el('textarea'); ta.id = 'rvc-'+id; ta.setAttribute('data-keep',''); ta.placeholder = 'Comment on this for the agent';
+    ta.setAttribute('aria-label','Comment for the agent');
+    var b = el('button','btn primary'); b.type = 'submit'; b.textContent = 'Send comment';
+    var f = el('form','',[ta, b]);
+    f.addEventListener('submit', function(e){ e.preventDefault(); var v = ta.value.trim(); if(v && send('suggestion', id, v)) ta.value = '' });
+    box.replaceChildren(el('h3','',[txt('Comments')]), list.children.length ? list : el('p','empty',[txt('No comments yet.')]), f);
+  }
+
+  function renderRvMain(items, cur){
+    var main = $('rv-main'); main.replaceChildren();
+    if(!cur){ main.append(el('p','empty',[txt('Nothing to review.')])); return }
+    var card = el('section','card step');
+    if(cur.step){
+      var st = cur.step, f = cur.flow;
+      main.append(el('div','card',[el('div','eyebrow',[txt(f.title + ' · step ' + cur.n + ' of ' + f.steps.length)]), el('p','',[rich(f.summary)])]));
+      card.append(
+        el('div','step-h',[el('span','num',[txt(String(cur.n))]), el('h2','',[txt(st.func)])]),
+        el('div','muted mono',[txt(st.file + ':' + st.start + '–' + st.end)]),
+        el('p','',[rich(st.why)]),
+        codeBlock(st.code, st.start, st.file));
+    } else {
+      var c = cur.commit, add = 0, del = 0;
+      c.files.forEach(function(x){ add += x.add; del += x.del });
+      var meta = el('div','meta',[el('span','mono',[txt(c.hash)]), txt(when(c.date)), txt(c.files.length + ' files'),
+        el('span','nums',[el('span','a',[txt('+'+add)]), txt(' '), el('span','d',[txt('−'+del)])])]);
+      card.append(el('div','rv-head',[el('h2','',[txt(shortSubject(c.subject))]), meta]));
+      if(c.what) card.append(el('p','',[rich(c.what)]));
+      if(c.points.length){ var ul = el('ul','rv-points'); c.points.forEach(function(p){ ul.append(el('li','',[rich(p)])) }); card.append(ul) }
+      var files = el('div','cmts');
+      c.files.forEach(function(x){
+        var sum = el('summary','',[el('span','st '+x.status,[txt(x.status)]), el('span','mono',[txt(x.path)])]);
+        if(x.note) sum.append(el('span','muted',[txt(x.note)]));
+        sum.append(el('span','nums',[el('span','a',[txt('+'+x.add)]), txt(' '), el('span','d',[txt('−'+x.del)])]));
+        var d = el('details','file',[sum]);
+        if(x.diff){ d.append(diffBlock(x.diff)); if(x.diff.split('\n').length < 160 && x.status !== 'D') d.open = true }
+        files.append(d);
+      });
+      card.append(files);
+    }
+    card.append(el('div','rv-actions',[reviewedToggle(cur.id)]));
+    main.append(card, navButtons(items, cur));
+    var cm = el('section','card cmts'); cm.id = 'rv-cmts'; main.append(cm);
+    renderComments(cur.id);
+  }
+
+  ['flows','commits'].forEach(function(m){ $('rv-mode-'+m).addEventListener('click', function(){ rvMode = m; pref('rv:mode', m); renderReview() }) });
+
+  function connect(){
+    var c=$('conn'), txt=$('conn-text');
+    ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/ws');
+    ws.onopen=function(){ retry=0; c.classList.add('on'); txt.textContent='Live'; $('s-send').disabled=false };
+    ws.onmessage=function(e){
+      var m; try{ m=JSON.parse(e.data) }catch(_){ return }
+      if(m.type==='error'){ toast(m.message); return }
+      if(m.type==='snapshot'){
+        S=m.state; INBOX=m.inbox||[]; render();
+        if(m.review_version !== rvVersion){ var had = rvVersion !== null; rvVersion = m.review_version; if(had) loadReview() }
+        if(R){ var cur = rvSelected(rvItems()); if(cur) keep(function(){ renderComments(cur.id) }) }
+      }
+    };
+    ws.onclose=function(){
+      c.classList.remove('on'); $('s-send').disabled=true;
+      var wait=Math.min(10, 1+retry++); txt.textContent='Disconnected, retrying in '+wait+'s';
+      setTimeout(connect, wait*1000);
+    };
+  }
+
+  $('s-text').setAttribute('data-keep','');
+  $('suggest-form').addEventListener('submit', function(e){
+    e.preventDefault();
+    var t=$('s-text').value.trim(); if(!t) return;
+    if(send('suggestion', $('s-ref').value, t)) $('s-text').value='';
+  });
+  $('s-text').addEventListener('keydown', function(e){
+    if(e.key==='Enter' && (e.metaKey||e.ctrlKey)) $('suggest-form').requestSubmit();
+  });
+  loadReview();
+  connect();
+})();
+</script>
+</body>
+</html>

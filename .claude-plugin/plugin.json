@@ -1,0 +1,5 @@
+{
+  "name": "progress-desk",
+  "description": "A local live progress page a developer and Claude share during a multi-step coding task: status, decisions, suggestions, phases, flow diagrams and code review.",
+  "version": "0.1.0"
+}

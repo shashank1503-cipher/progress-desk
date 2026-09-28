@@ -1,0 +1,15 @@
+{
+  "title": "Progress Desk",
+  "updated_at": "",
+  "branch": "",
+  "base": "",
+  "agent": {"status": "idle", "now": "Setting up."},
+  "summary": {"percent": 0, "done": 0, "part": 0, "miss": 0},
+  "blockers": [],
+  "log": [],
+  "phases": [],
+  "decisions": [],
+  "components": [],
+  "diagrams": [],
+  "replies": {}
+}

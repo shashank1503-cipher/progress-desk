@@ -1,0 +1,11 @@
+{
+  "name": "progress-desk",
+  "owner": {"name": "shashank1503-cipher"},
+  "plugins": [
+    {
+      "name": "progress-desk",
+      "source": "./",
+      "description": "A local live progress page a developer and Claude share during a multi-step coding task."
+    }
+  ]
+}
