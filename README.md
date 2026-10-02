@@ -67,3 +67,7 @@ cd skills/progress-desk/assets && go test ./...
 ```
 
 This checks that the page loads, that a same-origin socket gets a snapshot and can post, and that other origins and non-loopback hosts are refused.
+
+## License
+
+MIT, see [LICENSE](LICENSE).

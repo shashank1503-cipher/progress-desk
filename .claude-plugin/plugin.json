@@ -1,5 +1,10 @@
 {
   "name": "progress-desk",
   "description": "A local live progress page a developer and Claude share during a multi-step coding task: status, decisions, suggestions, phases, flow diagrams and code review.",
-  "version": "0.1.1"
+  "version": "0.1.1",
+  "license": "MIT",
+  "author": {
+    "name": "shashank1503-cipher"
+  },
+  "repository": "https://github.com/shashank1503-cipher/progress-desk"
 }
