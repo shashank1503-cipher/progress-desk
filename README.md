@@ -4,6 +4,31 @@ A Claude Code skill that runs a local, live progress page you and Claude share w
 
 Everything runs on `127.0.0.1`. Nothing leaves your machine except the page's CDN fetches for Mermaid, highlight.js and fonts.
 
+![Agent status and the decisions waiting on you, each with the agent's recommendation](docs/waiting-on-you.jpg)
+
+<details>
+<summary><b>More screenshots</b>: activity and suggestions, flow, code review</summary>
+
+**Activity and suggestions.** Messages you send reach the agent as it works; it replies on the page (accepted, declined, or a question back to you).
+
+![Activity log and the suggestion box with agent replies](docs/activity-suggestions.jpg)
+
+**Flow.** A live build-progress graph generated from phases and open decisions, plus any diagrams the agent adds.
+
+![Build-progress graph: done, in-progress, ready and blocked phases, with a decision waiting on you](docs/flow.jpg)
+
+**Code review: walkthroughs.** Follow one request through the real functions, in the order they run.
+
+![Walkthrough step showing a middleware function with line numbers](docs/walkthrough.jpg)
+
+**Code review: history.** Commit by commit, with the agent's notes on what changed, why, and what to look at.
+
+![Commit view with notes and a diff](docs/history.jpg)
+
+</details>
+
+*Screenshots are from a made-up demo task (rate limiting a todo API).*
+
 ## Install
 
 In Claude Code:

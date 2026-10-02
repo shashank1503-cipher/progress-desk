@@ -44,7 +44,7 @@ button{cursor:pointer}
 
 .wrap{max-width:1120px;margin:0 auto;display:grid;gap:28px;padding-top:24px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px}
-.sec{display:grid;gap:12px}
+.sec{display:grid;gap:12px;align-content:start}
 .row{display:grid;gap:20px;grid-template-columns:minmax(0,3fr) minmax(0,2fr)}
 @media (max-width:860px){.row{grid-template-columns:1fr}}
 
@@ -150,7 +150,7 @@ td.path{white-space:nowrap}
 .step{display:grid;gap:8px}
 .step-h{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:baseline}
 .code{border:1px solid var(--line);border-radius:6px;overflow:auto;max-height:560px;background:var(--surface)}
-.code pre{margin:0;padding:10px 0;font:12.5px/1.55 "IBM Plex Mono",ui-monospace,Menlo,monospace;display:grid;grid-template-columns:auto 1fr;min-width:max-content}
+.code pre{tab-size:4;margin:0;padding:10px 0;font:12.5px/1.55 "IBM Plex Mono",ui-monospace,Menlo,monospace;display:grid;grid-template-columns:auto 1fr;min-width:max-content}
 .code .ln{color:var(--muted);text-align:right;padding:0 12px 0 14px;user-select:none;border-right:1px solid var(--line)}
 .code .src{padding:0 14px}
 .code .src code, .code .src .hljs{background:transparent;padding:0;font:inherit}
@@ -161,7 +161,7 @@ td.path{white-space:nowrap}
 .st.A{color:var(--done);background:var(--done-bg)} .st.D{color:var(--miss);background:var(--miss-bg)} .st.M,.st.R{color:var(--part);background:var(--part-bg)}
 .file .nums{margin-left:auto;font:12px "IBM Plex Mono",ui-monospace,monospace}
 .nums .a{color:var(--done)} .nums .d{color:var(--miss)}
-.diff{margin:0;font:12.5px/1.5 "IBM Plex Mono",ui-monospace,Menlo,monospace;overflow:auto;max-height:620px;border-top:1px solid var(--line)}
+.diff{tab-size:4;margin:0;font:12.5px/1.5 "IBM Plex Mono",ui-monospace,Menlo,monospace;overflow:auto;max-height:620px;border-top:1px solid var(--line)}
 .diff span{display:block;padding:0 12px;white-space:pre;min-width:max-content}
 .diff .add{background:var(--done-bg)} .diff .del{background:var(--miss-bg)}
 .diff .hunk{color:var(--accent);background:var(--accent-soft)}
@@ -507,6 +507,7 @@ td.path{white-space:nowrap}
   function pref(k, v){ try{ if(v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v) }catch(_){ return null } }
   function isReviewed(id){ return pref('rv:done:'+id) === '1' }
   function txt(t){ return document.createTextNode(t) }
+  function nfiles(c){ return c.files.length + (c.files.length === 1 ? ' file' : ' files') }
   function shortSubject(sub){ return sub.replace(/^[a-z]+\([A-Z]+-\d+\):\s*/, '') }
 
   function rvItems(){
@@ -554,7 +555,7 @@ td.path{white-space:nowrap}
       var tick = el('span','tick' + (isReviewed(x.id) ? ' on' : ''));
       var label = x.step
         ? el('span','',[txt(x.n + '. ' + x.step.func), el('small','',[txt(x.step.file)])])
-        : el('span','',[txt(shortSubject(x.commit.subject)), el('small','',[txt(x.commit.hash + ' · ' + x.commit.files.length + ' files')])]);
+        : el('span','',[txt(shortSubject(x.commit.subject)), el('small','',[txt(x.commit.hash + ' · ' + nfiles(x.commit))])]);
       b.append(tick, label);
       b.addEventListener('click', function(){ pref('rv:sel:'+rvMode, x.id); renderReview(); toReviewTop() });
       list.append(el('li','',[b]));
@@ -633,7 +634,7 @@ td.path{white-space:nowrap}
     } else {
       var c = cur.commit, add = 0, del = 0;
       c.files.forEach(function(x){ add += x.add; del += x.del });
-      var meta = el('div','meta',[el('span','mono',[txt(c.hash)]), txt(when(c.date)), txt(c.files.length + ' files'),
+      var meta = el('div','meta',[el('span','mono',[txt(c.hash)]), el('span','',[txt(when(c.date))]), el('span','',[txt(nfiles(c))]),
         el('span','nums',[el('span','a',[txt('+'+add)]), txt(' '), el('span','d',[txt('−'+del)])])]);
       card.append(el('div','rv-head',[el('h2','',[txt(shortSubject(c.subject))]), meta]));
       if(c.what) card.append(el('p','',[rich(c.what)]));
